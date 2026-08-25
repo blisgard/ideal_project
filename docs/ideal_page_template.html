@@ -1,0 +1,1238 @@
+<title>IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves</title>
+
+<!-- Primary Meta Tags -->
+<meta name="title" content="IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves">
+<meta name="description" content="IDeaL distills four ImageNet-trained ViT teachers into a single student without any real images, by optimizing Dead Leaves noise through the frozen teachers. ECCV 2026.">
+<meta name="keywords" content="knowledge distillation, multi-teacher distillation, data-free distillation, dead leaves, procedural noise, vision transformers, representation learning, ECCV 2026">
+<meta name="author" content="Feyza Yavuz, Mert Bülent Sarıyıldız, Diane Larlus">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="NAVER LABS Europe">
+<meta property="og:title" content="IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves">
+<meta property="og:description" content="IDeaL distills four ImageNet-trained ViT teachers into a single student without any real images, by optimizing Dead Leaves noise through the frozen teachers. ECCV 2026.">
+<!-- TODO: set the final URL once the page is hosted (and add an og:image social preview, 1200x630) -->
+<meta property="og:url" content="https://naver.github.io/ideal">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves">
+<meta name="twitter:description" content="IDeaL distills four ImageNet-trained ViT teachers into a single student without any real images, by optimizing Dead Leaves noise through the frozen teachers. ECCV 2026.">
+
+<!-- Academic citation tags (Google Scholar) -->
+<meta name="citation_title" content="IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves">
+<meta name="citation_author" content="Yavuz, Feyza">
+<meta name="citation_author" content="Sarıyıldız, Mert Bülent">
+<meta name="citation_author" content="Larlus, Diane">
+<meta name="citation_publication_date" content="2026">
+<meta name="citation_conference_title" content="European Conference on Computer Vision (ECCV)">
+<!-- TODO: replace with the real arXiv id -->
+<meta name="citation_pdf_url" content="https://arxiv.org/pdf/XXXX.XXXXX">
+
+<meta name="theme-color" content="#B02D8E">
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "IDeaL: Data-Free Multi-Teacher Distillation via Improved Dead Leaves",
+  "description": "IDeaL distills four ImageNet-trained ViT teachers into a single student without any real images, by optimizing Dead Leaves noise through the frozen teachers.",
+  "author": [
+    {"@type": "Person", "name": "Feyza Yavuz", "affiliation": {"@type": "Organization", "name": "NAVER LABS Europe"}},
+    {"@type": "Person", "name": "Mert Bülent Sarıyıldız", "affiliation": {"@type": "Organization", "name": "NAVER LABS Europe"}},
+    {"@type": "Person", "name": "Diane Larlus", "affiliation": {"@type": "Organization", "name": "NAVER LABS Europe"}}
+  ],
+  "datePublished": "2026",
+  "publisher": {"@type": "Organization", "name": "European Conference on Computer Vision (ECCV)"},
+  "url": "https://naver.github.io/ideal",
+  "keywords": ["knowledge distillation", "multi-teacher distillation", "data-free distillation", "dead leaves", "vision transformers"],
+  "isAccessibleForFree": true
+}
+</script>
+<!-- /head -->
+
+<style>
+@font-face{font-family:'ISans';font-style:normal;font-weight:400;src:url(data:font/woff2;base64,%%font:isans_normal_400%%) format('woff2')}
+@font-face{font-family:'ISans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,%%font:isans_normal_500%%) format('woff2')}
+@font-face{font-family:'ISans';font-style:normal;font-weight:600;src:url(data:font/woff2;base64,%%font:isans_normal_600%%) format('woff2')}
+
+:root{
+  --bg:#ffffff; --bg2:#f6f6f8; --bg3:#ebebef;
+  --ink:#363636; --ink2:#5f5f66; --ink3:#8c8c94;
+  --line:rgba(20,20,24,.13); --line2:rgba(20,20,24,.07);
+  --accent:#B02D8E; --accent-ink:#8F2273;
+  --link:#3273dc; --btn:#363636; --btn-ink:#ffffff;
+  --c-gauss:#2E6ACF; --c-dl:#C77F1F; --c-ideal:#B02D8E; --c-in:#1F8A5B;
+  --card-shadow:0 1px 2px rgba(20,20,24,.04),0 6px 20px rgba(20,20,24,.05);
+  --disk-alpha:.06;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141418; --bg2:#1d1d23; --bg3:#2a2a32;
+    --ink:#e9e9ee; --ink2:#a7a7b3; --ink3:#797983;
+    --line:rgba(233,233,238,.16); --line2:rgba(233,233,238,.08);
+    --accent:#C4499C; --accent-ink:#DB6DB6;
+    --link:#7aa5f0; --btn:#e9e9ee; --btn-ink:#17171b;
+    --c-gauss:#5B85DD; --c-dl:#C07E28; --c-ideal:#C4499C; --c-in:#279A60;
+    --card-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);
+    --disk-alpha:.05;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#ffffff; --bg2:#f6f6f8; --bg3:#ebebef;
+  --ink:#363636; --ink2:#5f5f66; --ink3:#8c8c94;
+  --line:rgba(20,20,24,.13); --line2:rgba(20,20,24,.07);
+  --accent:#B02D8E; --accent-ink:#8F2273;
+  --link:#3273dc; --btn:#363636; --btn-ink:#ffffff;
+  --c-gauss:#2E6ACF; --c-dl:#C77F1F; --c-ideal:#B02D8E; --c-in:#1F8A5B;
+  --card-shadow:0 1px 2px rgba(20,20,24,.04),0 6px 20px rgba(20,20,24,.05);
+  --disk-alpha:.06;
+}
+:root[data-theme="dark"]{
+  --bg:#141418; --bg2:#1d1d23; --bg3:#2a2a32;
+  --ink:#e9e9ee; --ink2:#a7a7b3; --ink3:#797983;
+  --line:rgba(233,233,238,.16); --line2:rgba(233,233,238,.08);
+  --accent:#C4499C; --accent-ink:#DB6DB6;
+  --link:#7aa5f0; --btn:#e9e9ee; --btn-ink:#17171b;
+  --c-gauss:#5B85DD; --c-dl:#C07E28; --c-ideal:#C4499C; --c-in:#279A60;
+  --card-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);
+  --disk-alpha:.05;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'ISans',system-ui,-apple-system,sans-serif;
+  font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
+a:hover{border-bottom-color:var(--link)}
+a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+button{font-family:inherit}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+.prose{max-width:70ch;margin:0 auto;text-align:justify}
+.eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.section{padding:64px 0}
+.band{background:var(--bg2)}
+.sec-head{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:34px}
+.sec-head h2{font-size:clamp(26px,3.4vw,34px)}
+.sec-head .lede{color:var(--ink2);font-size:17.5px;max-width:62ch}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- hero (academic template style: centered) ---------- */
+.hero{position:relative;padding:64px 0 56px;overflow:hidden;text-align:center}
+#heroCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero-inner{position:relative;max-width:860px;margin:0 auto}
+.pub-title{font-size:clamp(30px,4.5vw,46px);letter-spacing:-.01em}
+.pub-title .ideal-word{color:var(--accent)}
+.hero .venue{margin-bottom:18px}
+.authors{margin-top:22px;font-size:17px;color:var(--ink2)}
+.authors b{color:var(--ink);font-weight:600}
+.author-block{white-space:nowrap}
+.affil{margin-top:6px;font-size:15px;color:var(--ink3)}
+.hero-links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;font-size:15px;font-weight:500;
+  background:var(--btn);color:var(--btn-ink);border:1px solid transparent;cursor:pointer;transition:background .15s,color .15s}
+.btn:hover{background:var(--accent);color:#fff;border-bottom-color:transparent}
+.btn svg{width:15px;height:15px;fill:currentColor;flex:none}
+.btn.small{padding:8px 16px;font-size:13.5px;flex:none}
+
+/* ---------- teacher chips ---------- */
+.teachers{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:baseline;gap:8px;padding:7px 15px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:14px;font-weight:500}
+.chip small{color:var(--ink3);font-size:12px}
+
+/* ---------- noise zoo ---------- */
+.zoo{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.zoo-card{background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--card-shadow);display:flex;flex-direction:column}
+.zoo-card .imgs{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--bg2)}
+.zoo-card .imgs img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.zoo-card .body{padding:18px 20px 22px;display:flex;flex-direction:column;gap:8px;flex:1}
+.zoo-card h3{font-size:19px}
+.zoo-card .desc{font-size:14.5px;color:var(--ink2);flex:1}
+.zoo-stat{margin-top:10px;display:flex;align-items:baseline;gap:8px}
+.zoo-stat .num{font-weight:700;font-size:32px;font-variant-numeric:tabular-nums}
+.zoo-stat .lbl{font-size:12px;color:var(--ink3);line-height:1.3}
+.zoo-note{margin-top:18px;font-size:14px;color:var(--ink3);text-align:center}
+.zoo-card.is-ideal{border-color:var(--accent);border-width:1.5px}
+.zoo-card.is-ideal .num{color:var(--accent)}
+
+/* ---------- before/after viewer ---------- */
+.viewer{background:var(--bg);border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:22px;display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:22px}
+.ba{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;touch-action:none;cursor:ew-resize;user-select:none;background:var(--bg3)}
+.ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;image-rendering:auto}
+.ba .after-wrap{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ba .divider{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);pointer-events:none}
+.ba .handle{position:absolute;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:#fff;color:#333;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 10px rgba(0,0,0,.3);pointer-events:none;letter-spacing:-1px}
+.ba .tag{position:absolute;top:12px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;pointer-events:none}
+.ba .tag.l{left:12px}.ba .tag.r{right:12px}
+.viewer-side{display:flex;flex-direction:column;gap:16px}
+.viewer-side .expl{font-size:14px;color:var(--ink2)}
+.iter-readout{font-size:13px;color:var(--ink3)}
+.iter-readout .mono{color:var(--ink);font-weight:600}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.thumbs button{padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;background:none;line-height:0}
+.thumbs button.active{border-color:var(--accent)}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.play-row{display:flex;gap:10px;align-items:center}
+.icon-btn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;flex:none}
+.icon-btn:hover{background:var(--ink);color:var(--bg)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--bg3);outline-offset:4px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+
+/* ---------- timelapse player ---------- */
+.tl-stage{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:var(--bg3)}
+.tl-stage video{width:100%;height:100%;object-fit:cover;display:block}
+.tl-iter{position:absolute;left:12px;bottom:12px;padding:5px 12px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:12.5px;font-weight:600;pointer-events:none}
+.tl-live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.tl-live .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.subhead{font-weight:700;font-size:21px;margin:52px 0 16px}
+
+/* ---------- method figure ---------- */
+.mfig{background:var(--bg);border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:26px 26px 18px;margin-bottom:28px;overflow-x:auto}
+.mfig svg{width:100%;min-width:640px;height:auto;display:block}
+.mfig .fig-cap{font-size:13.5px;color:var(--ink3);margin-top:12px;text-align:center}
+.mfig text{font-family:'ISans',system-ui,sans-serif}
+.mfig .f-title{font-weight:700;font-size:17px;fill:var(--ink)}
+.mfig .f-lbl{font-size:12.5px;fill:var(--ink2)}
+.mfig .f-lbl-b{font-size:13px;font-weight:600;fill:var(--ink)}
+.mfig .f-small{font-size:11px;fill:var(--ink3)}
+.mfig .f-loss{font-size:12.5px;font-weight:600;fill:var(--accent-ink)}
+.mfig .f-flow{stroke:var(--ink3);stroke-width:1.5;fill:none}
+.mfig .f-grad{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-dasharray:6 5}
+.mfig .f-chip{fill:var(--bg2);stroke:var(--line);stroke-width:1}
+.mfig .f-student{fill:var(--bg2);stroke:var(--accent);stroke-width:1.8}
+.mfig .t-g{cursor:pointer;outline:none}
+.mfig .t-g:hover .f-chip,.mfig .t-g:focus-visible .f-chip{stroke:var(--ink2);stroke-width:1.5}
+.mfig .f-fwd,.mfig .f-larr,.mfig .f-losstag,.mfig .t-g{transition:opacity .2s,stroke .2s}
+.mfig.has-focus .f-fwd,.mfig.has-focus .f-larr,.mfig.has-focus .f-losstag,.mfig.has-focus .t-g{opacity:.22}
+.mfig.has-focus .f-fwd.lit,.mfig.has-focus .f-larr.lit,.mfig.has-focus .f-losstag.lit,.mfig.has-focus .t-g.lit{opacity:1}
+.mfig .f-fwd.lit,.mfig .f-larr.lit{stroke-width:2.4}
+.mfig #figAfter{transition:opacity .3s}
+@keyframes gradflow{to{stroke-dashoffset:-44}}
+.mfig .f-grad{animation:gradflow 1.5s linear infinite}
+.mfig .f-grad.fast{animation-duration:.45s;stroke-width:2.6}
+@media (prefers-reduced-motion: reduce){.mfig .f-grad{animation:none}}
+.fig-bar{display:flex;align-items:center;gap:18px;margin-top:14px;flex-wrap:wrap}
+.fig-bar .fig-cap{margin-top:0;text-align:left;flex:1;min-width:260px}
+
+/* ---------- method ---------- */
+.loss-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+.loss-card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:24px;box-shadow:var(--card-shadow)}
+.loss-card h3{font-size:20px;display:flex;align-items:baseline;gap:10px}
+.loss-card h3 .sym{font-family:ui-monospace,Menlo,monospace;font-size:15px;color:var(--accent-ink);font-weight:600}
+.loss-card .desc{font-size:14.5px;color:var(--ink2);margin:10px 0 18px}
+.loss-demo{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.loss-demo canvas{width:100%;aspect-ratio:1;display:block;border-radius:8px;background:var(--bg3)}
+.loss-demo .dcap{font-size:11.5px;color:var(--ink3);text-align:center;margin-top:6px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.loss-slider{margin-top:16px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink3)}
+.loss-slider input{flex:1}
+.method-steps{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.step-card{border:1px solid var(--line);border-radius:12px;padding:22px 24px;background:var(--bg)}
+.step-card .step-n{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+.step-card h3{font-size:18px;margin:6px 0 8px}
+.step-card p{font-size:14.5px;color:var(--ink2)}
+.eq{margin:26px 0 0;padding:18px 22px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:15px;overflow-x:auto;white-space:nowrap}
+.eq .t1{color:var(--ink3)} .eq .t2{color:var(--c-in)} .eq .t3{color:var(--accent-ink)}
+.eq-note{font-size:13px;color:var(--ink3);margin-top:10px}
+
+/* ---------- ablation ---------- */
+.abl{background:var(--bg);border:1px solid var(--line);border-radius:14px;box-shadow:var(--card-shadow);padding:26px;display:grid;grid-template-columns:280px minmax(0,1fr);gap:28px;align-items:start}
+.abl-img{border-radius:10px;overflow:hidden;line-height:0;position:relative}
+.abl-img img{width:100%;aspect-ratio:1;object-fit:cover;transition:opacity .2s}
+.abl-controls{display:flex;flex-direction:column;gap:20px}
+.loss-toggles{display:flex;gap:12px;flex-wrap:wrap}
+.ltog{display:inline-flex;align-items:center;gap:10px;padding:11px 18px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);cursor:pointer;font-size:15px;font-weight:500;transition:border-color .15s,background .15s}
+.ltog input{position:absolute;opacity:0;pointer-events:none}
+.ltog .box{width:18px;height:18px;border-radius:5px;border:2px solid var(--ink2);display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--bg);transition:background .15s,border-color .15s;flex:none}
+.ltog.on{border-color:var(--accent)}
+.ltog.on .box{background:var(--accent);border-color:var(--accent)}
+.ltog .sym{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;color:var(--ink2)}
+.abl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.abl-stat{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.abl-stat .k{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--ink3)}
+.abl-stat .v{font-weight:700;font-size:25px;font-variant-numeric:tabular-nums;margin-top:2px}
+.abl-stat .d{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink3)}
+.abl-stat .d.up{color:var(--c-in)}
+.abl-name{font-size:14px;color:var(--ink2)}
+.abl-name b{color:var(--ink)}
+
+/* ---------- results ---------- */
+.size-picker{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px}
+.size-picker button{border:none;background:transparent;color:var(--ink2);font-size:14px;font-weight:600;padding:7px 18px;border-radius:999px;cursor:pointer;font-variant-numeric:tabular-nums}
+.size-picker button.active{background:var(--btn);color:var(--btn-ink)}
+.size-picker.mini{align-self:flex-start}
+.size-picker.mini button{padding:5px 13px;font-size:12.5px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;color:var(--ink2)}
+.legend .li{display:inline-flex;align-items:center;gap:7px}
+.legend .sw{width:11px;height:11px;border-radius:3px;flex:none}
+.legend .refline-sw{width:16px;height:0;border-top:2px dashed var(--ink3);flex:none}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:22px}
+.chart-card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:20px 20px 12px;box-shadow:var(--card-shadow)}
+.chart-card h3{font-size:16px;font-weight:600}
+.chart-card .unit{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.chart-card svg{width:100%;height:auto;display:block;margin-top:8px}
+.bar-val{font-size:12px;font-weight:600;fill:var(--ink2);font-variant-numeric:tabular-nums}
+.axis-lbl{font-size:11px;fill:var(--ink3)}
+.results-note{margin-top:18px;font-size:14px;color:var(--ink2);max-width:70ch;margin-left:auto;margin-right:auto;text-align:center}
+.tooltip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:7px 11px;border-radius:8px;opacity:0;transition:opacity .12s;z-index:50;white-space:nowrap;font-variant-numeric:tabular-nums}
+.callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.callout{border-radius:12px;padding:24px;background:var(--bg2);border:1px solid var(--line)}
+.callout .big{font-weight:700;font-size:36px;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.callout p{font-size:14.5px;color:var(--ink2);margin-top:10px}
+.callout p b{color:var(--ink)}
+
+/* ---------- bibtex / footer ---------- */
+.bib{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:22px 24px;overflow-x:auto}
+.bib pre{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.6;color:var(--ink2)}
+.copy-btn{position:absolute;top:14px;right:14px;padding:7px 14px;font-size:13px;font-weight:600;border-radius:999px;border:1.5px solid var(--line);background:var(--bg2);color:var(--ink);cursor:pointer}
+.copy-btn:hover{border-color:var(--ink)}
+footer{padding:34px 0 44px;border-top:1px solid var(--line2);font-size:14px;color:var(--ink3)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* ---------- scroll to top ---------- */
+.scroll-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--btn);color:var(--btn-ink);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s,background .15s;z-index:60}
+.scroll-top.show{opacity:1;pointer-events:auto}
+.scroll-top:hover{background:var(--accent);color:#fff}
+.scroll-top svg{width:16px;height:16px;fill:currentColor}
+
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  *{animation:none!important;transition:none!important}
+}
+
+@media (max-width: 900px){
+  .zoo{grid-template-columns:1fr}
+  .viewer{grid-template-columns:1fr}
+  .loss-grid{grid-template-columns:1fr}
+  .method-steps{grid-template-columns:1fr}
+  .abl{grid-template-columns:1fr}
+  .abl-img{max-width:300px}
+  .charts{grid-template-columns:1fr}
+  .callouts{grid-template-columns:1fr}
+  .abl-stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="wrap hero-inner">
+    <p class="eyebrow venue">ECCV 2026</p>
+    <h1 class="pub-title"><span class="ideal-word">IDeaL</span>: Data-Free Multi-Teacher Distillation via Improved Dead&nbsp;Leaves</h1>
+    <div class="authors">
+      <span class="author-block"><b>Feyza Yavuz</b>,</span>
+      <span class="author-block"><a href="https://mbsariyildiz.github.io/" target="_blank" rel="noopener">Mert Bülent Sarıyıldız</a>,</span>
+      <span class="author-block"><a href="https://europe.naverlabs.com/people_user_naverlabs/diane-larlus/" target="_blank" rel="noopener">Diane Larlus</a></span>
+    </div>
+    <p class="affil">NAVER LABS Europe</p>
+    <div class="hero-links">
+      <!-- TODO: replace XXXX.XXXXX with the real arXiv id -->
+      <a class="btn" href="https://arxiv.org/pdf/XXXX.XXXXX" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 0H3a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V4.5L9.5 0zM9 5V1.5L12.5 5H9z"/></svg>
+        Paper
+      </a>
+      <a class="btn" href="https://arxiv.org/abs/XXXX.XXXXX" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 0h7.5L14 3.5V15a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1zm7 1.5V5h3.5L10 1.5zM4.5 8h7v1.2h-7V8zm0 3h7v1.2h-7V11z"/></svg>
+        arXiv
+      </a>
+      <a class="btn" href="https://github.com/naver/ideal" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        Code
+      </a>
+      <a class="btn" href="#bibtex">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 4C2.1 4 1 5.1 1 6.5S2.1 9 3.5 9c.2 0 .4 0 .5-.1C3.7 10.2 2.9 11 2 11.4V13c2.8-.6 4.5-2.9 4.5-5.6C6.5 5.4 5.2 4 3.5 4zm8 0C10.1 4 9 5.1 9 6.5S10.1 9 11.5 9c.2 0 .4 0 .5-.1-.3 1.3-1.1 2.1-2 2.5V13c2.8-.6 4.5-2.9 4.5-5.6C14.5 5.4 13.2 4 11.5 4z"/></svg>
+        BibTeX
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ================= ABSTRACT ================= -->
+<section class="section band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Abstract</h2>
+    </div>
+    <div class="prose reveal">
+      <p>Multi-teacher distillation merges complementary vision models — supervised and self-supervised — into one student that inherits the strengths of all of them. But every existing method assumes the teachers can be fed <i>real images</i>, usually their own training data. What if that data is private, proprietary, or simply gone?</p>
+      <p style="margin-top:14px">We take the adversarial stance: we distill four ImageNet-trained ViT-B/16 teachers into a student <b>without a single real image</b>. Starting from procedural Dead Leaves noise, we treat the pixels as learnable parameters and optimize them through the frozen teachers with two decorrelation losses — within each image and across the batch — producing <b>IDeaL</b>, a reusable data-free distillation set. With 1M IDeaL samples the student reaches 78.2 ImageNet Top-1 (vs 66.9 for plain Dead Leaves) and clears its own weakest teacher on transfer, segmentation, and depth.</p>
+      <div class="teachers" aria-label="The four teachers">
+        <span class="chip">DINO <small>self-sup.</small></span>
+        <span class="chip">iBOT <small>self-sup.</small></span>
+        <span class="chip">DeiT-3 <small>supervised</small></span>
+        <span class="chip">dBOT-ft <small>supervised</small></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NOISE ZOO ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Step zero</p>
+      <h2>Not all noise is created equal</h2>
+      <p class="lede">Replace ImageNet with procedural noise and see what survives. Structured noise with image-like statistics — Dead Leaves — gets surprisingly far. Optimizing it gets much further.</p>
+    </div>
+    <div class="zoo">
+      <div class="zoo-card reveal">
+        <div class="imgs" role="img" aria-label="Four Gaussian noise samples: uniform gray static">
+          <img src="data:image/jpeg;base64,%%img:gaussian%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:gaussian2%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:gaussian3%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:gaussian4%%" alt="">
+        </div>
+        <div class="body">
+          <h3>Gaussian noise</h3>
+          <p class="desc">Every patch looks the same. Self-attention has nothing to attend to, and the student learns almost nothing.</p>
+          <div class="zoo-stat"><span class="num">22.6</span><span class="lbl">student ImageNet<br>Top-1 · 1M samples</span></div>
+        </div>
+      </div>
+      <div class="zoo-card reveal">
+        <div class="imgs" role="img" aria-label="Four Dead Leaves samples: overlapping colored disks and shapes">
+          <img src="data:image/jpeg;base64,%%img:pair3_before%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair0_before%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair6_before%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair7_before%%" alt="">
+        </div>
+        <div class="body">
+          <h3>Dead Leaves</h3>
+          <p class="desc">Overlapping shapes drawn by a simple formula. Image-like statistics, zero semantics — and already a capable distillation set.</p>
+          <div class="zoo-stat"><span class="num">66.9</span><span class="lbl">student ImageNet<br>Top-1 · 1M samples</span></div>
+        </div>
+      </div>
+      <div class="zoo-card is-ideal reveal">
+        <div class="imgs" role="img" aria-label="Four IDeaL samples: the same Dead Leaves images after optimization, now rich with texture and structure">
+          <img src="data:image/jpeg;base64,%%img:pair3_after%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair0_after%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair6_after%%" alt="">
+          <img src="data:image/jpeg;base64,%%img:pair7_after%%" alt="">
+        </div>
+        <div class="body">
+          <h3>IDeaL <span style="font-weight:500;font-size:14px;color:var(--ink3)">(ours)</span></h3>
+          <p class="desc">The same Dead Leaves samples, pixel-optimized through the frozen teachers to be maximally informative for all of them at once.</p>
+          <div class="zoo-stat"><span class="num">78.2</span><span class="lbl">student ImageNet<br>Top-1 · 1M samples</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="zoo-note reveal">For reference, a student distilled on 1M <b>real ImageNet images</b> reaches 83.2 — and the weakest teacher sits at 78.4.</p>
+  </div>
+</section>
+
+<!-- ================= BEFORE / AFTER ================= -->
+<section class="section band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Captured live from a real run</p>
+      <h2>Watch the pixels learn</h2>
+      <p class="lede">The first 1,000 gradient steps of the actual optimization, captured frame by frame. Play it, or scrub through yourself — structure floods in almost immediately.</p>
+    </div>
+    <div class="viewer reveal">
+      <div class="tl-stage">
+        <video id="tlVideo" muted playsinline preload="auto"></video>
+        <div class="tl-iter mono" id="tlIter">iteration 0 / 1000</div>
+      </div>
+      <div class="viewer-side">
+        <p class="tl-live"><span class="dot"></span>actual optimization</p>
+        <div class="size-picker mini" role="tablist" aria-label="Choose the initialization">
+          <button data-init="dl" class="active" role="tab">Dead Leaves</button>
+          <button data-init="gauss" role="tab">Gaussian</button>
+        </div>
+        <p class="expl" id="tlExpl">A Dead Leaves sample, its pixels treated as parameters, updated by backpropagating the two decorrelation losses through all four frozen teachers. This is our method running — not an animation.</p>
+        <div class="play-row">
+          <button class="icon-btn" id="tlPlay" aria-label="Play or pause the timelapse">▶</button>
+          <input type="range" id="tlSlider" min="0" max="1000" value="0" aria-label="Scrub through optimization iterations">
+        </div>
+        <div class="thumbs" id="tlThumbs" role="tablist" aria-label="Choose a sample to watch"></div>
+      </div>
+    </div>
+
+    <h3 class="subhead reveal">More before / after pairs</h3>
+    <p class="lede reveal" style="color:var(--ink2);font-size:16px;margin:-6px 0 22px;max-width:62ch">Drag the divider — each pair is the <i>same</i> image at initialization and after optimization.</p>
+    <div class="viewer reveal">
+      <div class="ba" id="baBox" tabindex="0" role="slider" aria-label="Before and after comparison. Use arrow keys to move the divider." aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+        <img id="baBefore" src="data:image/jpeg;base64,%%img:pair0_before%%" alt="Sample before optimization">
+        <div class="after-wrap" id="baAfterWrap"><img id="baAfter" src="data:image/jpeg;base64,%%img:pair0_after%%" alt="The same sample after IDeaL optimization"></div>
+        <div class="divider" id="baDiv"></div>
+        <div class="handle" id="baHandle">◂▸</div>
+        <span class="tag l">iter 0</span><span class="tag r" id="baTagR">iter 4000</span>
+      </div>
+      <div class="viewer-side">
+        <div class="size-picker mini" role="tablist" aria-label="Choose the initialization">
+          <button data-binit="dl" class="active" role="tab">Dead Leaves</button>
+          <button data-binit="gauss" role="tab">Gaussian</button>
+        </div>
+        <p class="expl" id="baExpl">Flat disks grow textures, gratings, and object-like structure — whatever excites the teachers’ attention layers. The images never try to look real; they try to be <i>informative</i>. These pairs come from the full 1M-sample run (4,000 iterations).</p>
+        <div class="play-row">
+          <button class="icon-btn" id="baPlay" aria-label="Animate the divider">▶</button>
+        </div>
+        <div class="thumbs" id="baThumbs" role="tablist" aria-label="Choose a sample pair"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= METHOD ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">The method</p>
+      <h2>Two losses, one idea: decorrelate</h2>
+      <p class="lede">ViT attention thrives on diversity. So we treat pixels as parameters and push representations apart — inside each image, and across the batch.</p>
+    </div>
+
+    <div class="mfig reveal">
+      <svg viewBox="0 0 940 620" role="img" aria-label="Method diagram. Step 1: a Dead Leaves image is forwarded through four different frozen teachers, DINO, iBOT, DeiT-3 and dBOT-ft. Each teacher contributes patch and image decorrelation losses, whose gradients flow back and update the pixels, producing an IDeaL sample. Step 2: the resulting IDeaL dataset is used in UNIC multi-teacher distillation, where the same four teachers supervise one student.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--ink3)"/>
+          </marker>
+          <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+          <clipPath id="rimg"><rect x="0" y="0" width="120" height="120" rx="12"/></clipPath>
+        </defs>
+
+        <!-- ============ STEP 1 ============ -->
+        <text class="f-title" x="20" y="32">Step 1 · Four teachers sculpt the pixels</text>
+
+        <!-- input image -->
+        <g transform="translate(30,70)">
+          <image href="data:image/jpeg;base64,%%img:pair0_before%%" width="120" height="120" clip-path="url(#rimg)"/>
+          <rect width="120" height="120" rx="12" fill="none" stroke="var(--line)"/>
+          <text class="f-lbl-b" x="60" y="140" text-anchor="middle">Dead Leaves</text>
+          <text class="f-small" x="60" y="156" text-anchor="middle">pixels = learnable parameters</text>
+        </g>
+
+        <!-- forward fan arrows -->
+        <path class="f-flow f-fwd" data-t="0" d="M160,110 C230,105 260,84 328,80" marker-end="url(#arr)"/>
+        <path class="f-flow f-fwd" data-t="1" d="M160,122 C230,122 260,126 328,128" marker-end="url(#arr)"/>
+        <path class="f-flow f-fwd" data-t="2" d="M160,134 C230,140 260,172 328,176" marker-end="url(#arr)"/>
+        <path class="f-flow f-fwd" data-t="3" d="M160,146 C230,158 260,220 328,224" marker-end="url(#arr)"/>
+
+        <!-- teacher chips: 4 different colors = 4 different teachers -->
+        <g class="t-g" data-t="0" tabindex="0" role="button" aria-label="Highlight DINO's role" transform="translate(332,62)">
+          <rect class="f-chip" width="150" height="36" rx="10"/><rect x="0" y="0" width="5" height="36" rx="2.5" fill="#2E6ACF"/>
+          <text class="f-lbl-b" x="16" y="23">DINO <tspan class="f-small">· self-sup · ❄</tspan></text>
+        </g>
+        <g class="t-g" data-t="1" tabindex="0" role="button" aria-label="Highlight iBOT's role" transform="translate(332,110)">
+          <rect class="f-chip" width="150" height="36" rx="10"/><rect x="0" y="0" width="5" height="36" rx="2.5" fill="#7C4FB8"/>
+          <text class="f-lbl-b" x="16" y="23">iBOT <tspan class="f-small">· self-sup · ❄</tspan></text>
+        </g>
+        <g class="t-g" data-t="2" tabindex="0" role="button" aria-label="Highlight DeiT-3's role" transform="translate(332,158)">
+          <rect class="f-chip" width="150" height="36" rx="10"/><rect x="0" y="0" width="5" height="36" rx="2.5" fill="#C77F1F"/>
+          <text class="f-lbl-b" x="16" y="23">DeiT-3 <tspan class="f-small">· superv. · ❄</tspan></text>
+        </g>
+        <g class="t-g" data-t="3" tabindex="0" role="button" aria-label="Highlight dBOT-ft's role" transform="translate(332,206)">
+          <rect class="f-chip" width="150" height="36" rx="10"/><rect x="0" y="0" width="5" height="36" rx="2.5" fill="#1F8A5B"/>
+          <text class="f-lbl-b" x="16" y="23">dBOT-ft <tspan class="f-small">· superv. · ❄</tspan></text>
+        </g>
+        <text class="f-small" x="407" y="262" text-anchor="middle">4 different frozen ViT teachers — hover one</text>
+
+        <!-- per-teacher loss tags -->
+        <path class="f-flow f-larr" data-t="0" d="M486,80 L530,80" marker-end="url(#arr)"/>
+        <path class="f-flow f-larr" data-t="1" d="M486,128 L530,128" marker-end="url(#arr)"/>
+        <path class="f-flow f-larr" data-t="2" d="M486,176 L530,176" marker-end="url(#arr)"/>
+        <path class="f-flow f-larr" data-t="3" d="M486,224 L530,224" marker-end="url(#arr)"/>
+        <text class="f-loss f-losstag" data-t="0" x="538" y="84">L₁ᴾᴰ + L₁ᴵᴰ</text>
+        <text class="f-loss f-losstag" data-t="1" x="538" y="132">L₂ᴾᴰ + L₂ᴵᴰ</text>
+        <text class="f-loss f-losstag" data-t="2" x="538" y="180">L₃ᴾᴰ + L₃ᴵᴰ</text>
+        <text class="f-loss f-losstag" data-t="3" x="538" y="228">L₄ᴾᴰ + L₄ᴵᴰ</text>
+        <text class="f-lbl" x="620" y="156" transform="rotate(90,620,156)" text-anchor="middle">summed over teachers</text>
+
+        <!-- gradient loop back to pixels -->
+        <path class="f-grad" d="M600,246 C600,306 300,306 162,196 " marker-end="url(#arrA)"/>
+        <text class="f-loss" x="400" y="322" text-anchor="middle">∇ pixels — gradients flow back through all four frozen teachers</text>
+
+        <!-- result -->
+        <path class="f-flow" d="M660,152 L740,152" marker-end="url(#arr)" stroke-width="2"/>
+        <text class="f-small" id="figSteps" x="700" y="142" text-anchor="middle">×1,000s of steps</text>
+        <g transform="translate(748,92)">
+          <image href="data:image/jpeg;base64,%%img:pair0_before%%" width="120" height="120" clip-path="url(#rimg)"/>
+          <image id="figAfter" href="data:image/jpeg;base64,%%img:pair0_after%%" width="120" height="120" clip-path="url(#rimg)"/>
+          <rect width="120" height="120" rx="12" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          <text class="f-lbl-b" x="60" y="140" text-anchor="middle" fill="var(--accent-ink)">IDeaL sample</text>
+        </g>
+
+        <!-- divider -->
+        <line x1="20" y1="360" x2="920" y2="360" stroke="var(--line)" stroke-width="1"/>
+
+        <!-- ============ STEP 2 ============ -->
+        <text class="f-title" x="20" y="398">Step 2 · The same four teachers distill into one student (UNIC)</text>
+
+        <!-- ideal stack -->
+        <g transform="translate(46,440)">
+          <rect x="16" y="-14" width="104" height="104" rx="12" fill="var(--bg3)" stroke="var(--line)"/>
+          <rect x="8" y="-7" width="104" height="104" rx="12" fill="var(--bg3)" stroke="var(--line)"/>
+          <g transform="scale(0.867)"><image href="data:image/jpeg;base64,%%img:pair3_after%%" width="120" height="120" clip-path="url(#rimg)"/></g>
+          <rect width="104" height="104" rx="12" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          <text class="f-lbl-b" x="60" y="126" text-anchor="middle">IDeaL dataset</text>
+          <text class="f-small" x="60" y="142" text-anchor="middle">generated once · no real images</text>
+        </g>
+
+        <!-- arrows from data to teachers group and student -->
+        <path class="f-flow" d="M172,470 C230,470 250,452 300,450" marker-end="url(#arr)"/>
+        <path class="f-flow" d="M172,500 C230,502 250,524 300,526" marker-end="url(#arr)"/>
+
+        <!-- compact teacher group -->
+        <g transform="translate(304,424)">
+          <rect width="216" height="52" rx="12" class="f-chip"/>
+          <circle cx="22" cy="26" r="7" fill="#2E6ACF"/><circle cx="42" cy="26" r="7" fill="#7C4FB8"/>
+          <circle cx="62" cy="26" r="7" fill="#C77F1F"/><circle cx="82" cy="26" r="7" fill="#1F8A5B"/>
+          <text class="f-lbl-b" x="100" y="24">4 teachers ❄</text>
+          <text class="f-small" x="100" y="40">frozen, as in Step 1</text>
+        </g>
+        <!-- student -->
+        <g transform="translate(304,502)">
+          <rect width="216" height="48" rx="12" class="f-student"/>
+          <text class="f-lbl-b" x="18" y="22">Student ViT-B/16</text>
+          <text class="f-small" x="18" y="38">trainable · learns from all four at once</text>
+        </g>
+
+        <!-- matching -->
+        <path class="f-flow" d="M524,450 L586,478" marker-end="url(#arr)"/>
+        <path class="f-flow" d="M524,526 L586,498" marker-end="url(#arr)"/>
+        <g transform="translate(590,462)">
+          <rect width="188" height="52" rx="12" fill="none" stroke="var(--ink3)" stroke-width="1.3" stroke-dasharray="4 4"/>
+          <text class="f-lbl-b" x="94" y="23" text-anchor="middle">match CLS + patch</text>
+          <text class="f-small" x="94" y="40" text-anchor="middle">features per teacher (UNIC)</text>
+        </g>
+        <path class="f-flow" d="M782,488 L830,488" marker-end="url(#arr)" stroke-width="2"/>
+        <text class="f-lbl-b" x="838" y="482">one student,</text>
+        <text class="f-lbl-b" x="838" y="500">four skills</text>
+      </svg>
+      <div class="fig-bar">
+        <button class="btn small" id="figRun">▶ Run the optimization</button>
+        <p class="fig-cap" id="figCap">The same four teachers supervise twice: first they shape the <i>pixels</i> (Step 1), then they teach the <i>student</i> (Step 2).</p>
+      </div>
+    </div>
+
+    <div class="method-steps reveal">
+      <div class="step-card">
+        <p class="step-n">Step 1 — generate</p>
+        <h3>Optimize the noise</h3>
+        <p>Start from Dead Leaves. Backpropagate two decorrelation losses (plus a total-variation regularizer) through the <b>frozen</b> teachers, updating only the pixels. No labels, no classification heads, no teacher training data.</p>
+      </div>
+      <div class="step-card">
+        <p class="step-n">Step 2 — distill</p>
+        <h3>Train the student</h3>
+        <p>Use the optimized images exactly as if they were real data, in an unmodified UNIC multi-teacher distillation setup. Generation cost is paid once; the dataset is reusable for any student.</p>
+      </div>
+    </div>
+
+    <div class="loss-grid">
+      <div class="loss-card reveal">
+        <h3>Patch decorrelation <span class="sym">L<sub>PD</sub></span></h3>
+        <p class="desc">Within one image, make every patch carry distinct information: drive the off-diagonal of the patch-similarity matrix Γ to zero, at every layer of every teacher.</p>
+        <div class="loss-demo">
+          <div><canvas id="pdPatches" width="300" height="300"></canvas><p class="dcap">patches</p></div>
+          <div><canvas id="pdMatrix" width="300" height="300"></canvas><p class="dcap">Γ → identity</p></div>
+        </div>
+        <div class="loss-slider"><span>noise</span><input type="range" id="pdSlider" min="0" max="100" value="0" aria-label="Patch decorrelation amount"><span>IDeaL</span></div>
+      </div>
+      <div class="loss-card reveal">
+        <h3>Image decorrelation <span class="sym">L<sub>ID</sub></span></h3>
+        <p class="desc">Across the batch, keep global (CLS) representations apart — so samples spread out over the teachers’ feature spaces instead of collapsing to one mode.</p>
+        <div class="loss-demo">
+          <div><canvas id="idClump" width="300" height="300"></canvas><p class="dcap">feature space</p></div>
+          <div><canvas id="idMatrix" width="300" height="300"></canvas><p class="dcap">Γ<sup>I</sup> → identity</p></div>
+        </div>
+        <div class="loss-slider"><span>collapsed</span><input type="range" id="idSlider" min="0" max="100" value="0" aria-label="Image decorrelation amount"><span>diverse</span></div>
+      </div>
+    </div>
+
+    <div class="reveal">
+      <div class="eq" aria-label="Generation loss equation">
+        L<sub>G</sub> = <span class="t1">α₁·L<sub>TV</sub></span> + Σ<sub>teachers</sub> ( <span class="t2">α₂·L<sub>PD</sub></span> + <span class="t3">α₃·L<sub>ID</sub></span> )
+      </div>
+      <p class="eq-note">Just cosine-similarity matrices and Frobenius norms — cheap enough to scale to a million samples across four teachers.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ABLATION ================= -->
+<section class="section band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Ablation, playable</p>
+      <h2>Flip the losses on and off</h2>
+      <p class="lede">Each loss sculpts the images differently — and the student’s scores follow. Numbers from the 10K-sample ablation.</p>
+    </div>
+    <div class="abl reveal">
+      <div class="abl-img"><img id="ablImg" src="data:image/jpeg;base64,%%img:abl_dl%%" alt="Sample generated with the currently selected loss combination"></div>
+      <div class="abl-controls">
+        <div class="loss-toggles">
+          <label class="ltog" id="togPD"><input type="checkbox" id="ckPD"><span class="box">✓</span>Patch decorrelation <span class="sym">L<sub>PD</sub></span></label>
+          <label class="ltog" id="togID"><input type="checkbox" id="ckID"><span class="box">✓</span>Image decorrelation <span class="sym">L<sub>ID</sub></span></label>
+        </div>
+        <p class="abl-name" id="ablName"></p>
+        <div class="abl-stats">
+          <div class="abl-stat"><p class="k">ImageNet ↑</p><p class="v" id="sIN">66.6</p><p class="d" id="dIN">&nbsp;</p></div>
+          <div class="abl-stat"><p class="k">Transfer ↑</p><p class="v" id="sTR">65.1</p><p class="d" id="dTR">&nbsp;</p></div>
+          <div class="abl-stat"><p class="k">Seg. mIoU ↑</p><p class="v" id="sSG">29.1</p><p class="d" id="dSG">&nbsp;</p></div>
+          <div class="abl-stat"><p class="k">Depth RMSE ↓</p><p class="v" id="sDP">0.655</p><p class="d" id="dDP">&nbsp;</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RESULTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Results</p>
+      <h2>How close can noise get?</h2>
+      <p class="lede">Students distilled from the same four teachers, on four downstream tasks. Pick a distillation budget — at 1K images, IDeaL beats <i>real ImageNet</i> on classification.</p>
+    </div>
+    <div class="reveal" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between">
+      <div class="size-picker" role="tablist" aria-label="Distillation set size">
+        <button data-size="1K" role="tab">1K</button>
+        <button data-size="10K" role="tab">10K</button>
+        <button data-size="100K" role="tab">100K</button>
+        <button data-size="1M" role="tab" class="active">1M</button>
+      </div>
+      <div class="legend" aria-hidden="false">
+        <span class="li"><span class="sw" style="background:var(--c-gauss)"></span>Gaussian noise</span>
+        <span class="li"><span class="sw" style="background:var(--c-dl)"></span>Dead Leaves</span>
+        <span class="li"><span class="sw" style="background:var(--c-ideal)"></span>IDeaL (ours)</span>
+        <span class="li"><span class="sw" style="background:var(--c-in)"></span>ImageNet (oracle)</span>
+        <span class="li"><span class="refline-sw"></span>weakest teacher</span>
+      </div>
+    </div>
+    <div class="charts" id="charts"></div>
+    <p class="results-note reveal">Depth is RMSE, where lower is better. The dashed line marks the minimum teacher performance on each task — with 1M IDeaL samples the student clears it on transfer, segmentation and depth, without ever seeing a real image.</p>
+
+    <div class="callouts">
+      <div class="callout reveal"><p class="big">+14%</p><p>ImageNet Top-1 over plain Dead Leaves at a 1K budget — and <b>+17%</b> at 1M. Segmentation gains up to <b>+18%</b>.</p></div>
+      <div class="callout reveal"><p class="big">74.1 vs 72.6</p><p>With only <b>1K images</b>, the IDeaL student beats the student distilled on a 1K ImageNet subset — synthetic beats real when data is scarce.</p></div>
+      <div class="callout reveal"><p class="big">3 / 4</p><p>Tasks where the 1M-IDeaL student outperforms the <b>weakest of its own teachers</b> — a student with no data, more balanced than any single teacher.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BIBTEX ================= -->
+<section class="section band" id="bibtex">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Citation</p>
+      <h2>BibTeX</h2>
+    </div>
+    <div class="bib reveal">
+      <button class="copy-btn" id="copyBib">Copy</button>
+      <pre id="bibText">@inproceedings{yavuz2026ideal,
+  title     = {{IDeaL}: Data-Free Multi-Teacher Distillation via Improved Dead Leaves},
+  author    = {Yavuz, Feyza and Sar{\i}y{\i}ld{\i}z, Mert B{\"u}lent and Larlus, Diane},
+  booktitle = {Proceedings of the European Conference on Computer Vision (ECCV)},
+  year      = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<button class="scroll-top" id="scrollTop" aria-label="Scroll to top" title="Scroll to top">
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 4l6 6-1.4 1.4L8 6.8l-4.6 4.6L2 10z"/></svg>
+</button>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 NAVER LABS Europe · Distillation &amp; evaluation built on <a href="https://github.com/naver/unic" target="_blank" rel="noopener">UNIC</a></span>
+    <span>Page layout follows the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">Academic Project Page Template</a></span>
+  </div>
+</footer>
+
+<div class="tooltip" id="tip"></div>
+
+<script>
+(function(){
+"use strict";
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- palette helper (reads CSS tokens, re-read on theme change) ---------- */
+function tok(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ================= hero background: drifting muted disks ================= */
+const hc = document.getElementById('heroCanvas');
+const hctx = hc.getContext('2d');
+let disks = [];
+function heroResize(){
+  const r = hc.parentElement.getBoundingClientRect();
+  hc.width = r.width * devicePixelRatio; hc.height = r.height * devicePixelRatio;
+}
+function heroInit(){
+  heroResize();
+  const hues = [28, 88, 160, 210, 320, 45];
+  disks = Array.from({length: 26}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 0.03 + Math.random()*0.11,
+    h: hues[Math.floor(Math.random()*hues.length)],
+    vx: (Math.random()-0.5)*0.00016, vy: (Math.random()-0.5)*0.00012
+  }));
+}
+function heroDraw(){
+  const w = hc.width, h = hc.height;
+  hctx.clearRect(0,0,w,h);
+  const a = parseFloat(tok('--disk-alpha')) || 0.1;
+  for (const d of disks){
+    if (!reduceMotion){ d.x += d.vx; d.y += d.vy;
+      if (d.x < -0.2) d.x = 1.2; if (d.x > 1.2) d.x = -0.2;
+      if (d.y < -0.2) d.y = 1.2; if (d.y > 1.2) d.y = -0.2; }
+    hctx.beginPath();
+    hctx.arc(d.x*w, d.y*h, d.r*w, 0, Math.PI*2);
+    hctx.fillStyle = `hsla(${d.h}, 42%, 52%, ${a})`;
+    hctx.fill();
+  }
+  if (!reduceMotion) requestAnimationFrame(heroDraw);
+}
+heroInit(); heroDraw();
+addEventListener('resize', () => { heroResize(); });
+
+/* ================= timelapse player ================= */
+const TL = %%tl_json%%; // {dl: [{v, iters, poster}], gauss: [...]}
+const TL_EXPL = {
+  dl: 'A Dead Leaves sample, its pixels treated as parameters, updated by backpropagating the two decorrelation losses through all four frozen teachers. This is our method running — not an animation.',
+  gauss: 'The same optimization, but starting from pure Gaussian noise instead of Dead Leaves. The teachers impose structure either way — structured initialization just gives them a head start.'
+};
+const FPS = 12;
+// hide the initialization toggles when only one source was built in
+if (!TL.gauss) document.querySelectorAll('[data-init], [data-binit]').forEach(b => { b.closest('.size-picker').style.display = 'none'; });
+const tlVideo = document.getElementById('tlVideo');
+const tlSlider = document.getElementById('tlSlider');
+const tlIter = document.getElementById('tlIter');
+const tlPlayBtn = document.getElementById('tlPlay');
+let tlSrc = 'dl', tlCur = 0;
+function tlLoad(i){
+  tlCur = i;
+  tlVideo.src = 'data:video/mp4;base64,' + TL[tlSrc][i].v;
+  tlVideo.load();
+  tlSlider.value = 0;
+  tlIter.textContent = 'iteration 0 / 1000';
+  document.querySelectorAll('#tlThumbs button').forEach((b, j) => b.classList.toggle('active', j === i));
+}
+function tlReadout(){
+  const d = tlVideo.duration || 1;
+  const frac = tlVideo.currentTime / d;
+  tlSlider.value = Math.round(frac * 1000);
+  const iters = TL[tlSrc][tlCur].iters;
+  const fi = Math.min(iters.length - 1, Math.floor(tlVideo.currentTime * FPS));
+  tlIter.textContent = 'iteration ' + iters[fi] + ' / 1000';
+}
+tlVideo.addEventListener('timeupdate', tlReadout);
+tlVideo.addEventListener('ended', () => { tlPlayBtn.textContent = '▶'; });
+tlPlayBtn.addEventListener('click', () => {
+  if (tlVideo.paused){
+    if (tlVideo.currentTime >= (tlVideo.duration || 0) - 0.05) tlVideo.currentTime = 0;
+    tlVideo.play(); tlPlayBtn.textContent = '❚❚';
+  } else { tlVideo.pause(); tlPlayBtn.textContent = '▶'; }
+});
+tlSlider.addEventListener('input', () => {
+  tlVideo.pause(); tlPlayBtn.textContent = '▶';
+  const d = tlVideo.duration;
+  if (d){ tlVideo.currentTime = (tlSlider.value / 1000) * d; tlReadout(); }
+});
+const tlThumbs = document.getElementById('tlThumbs');
+function tlBuildThumbs(){
+  tlThumbs.innerHTML = '';
+  TL[tlSrc].forEach((s, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('role','tab');
+    b.setAttribute('aria-label','Timelapse sample ' + (i+1));
+    const im = document.createElement('img');
+    im.src = 'data:image/jpeg;base64,' + s.poster; im.alt = '';
+    b.appendChild(im);
+    b.addEventListener('click', () => { const wasPlaying = !tlVideo.paused; tlLoad(i); if (wasPlaying){ tlVideo.play(); tlPlayBtn.textContent = '❚❚'; } });
+    tlThumbs.appendChild(b);
+  });
+}
+document.querySelectorAll('[data-init]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.init === tlSrc) return;
+    tlSrc = btn.dataset.init;
+    document.querySelectorAll('[data-init]').forEach(x => x.classList.toggle('active', x === btn));
+    document.getElementById('tlExpl').textContent = TL_EXPL[tlSrc];
+    const wasPlaying = !tlVideo.paused;
+    tlBuildThumbs();
+    tlLoad(0);
+    if (wasPlaying){ tlVideo.play(); tlPlayBtn.textContent = '❚❚'; }
+  });
+});
+tlBuildThumbs();
+tlLoad(0);
+// autoplay once when scrolled into view
+if (!reduceMotion){
+  const tio = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting){ tio.disconnect(); tlVideo.play().then(() => tlPlayBtn.textContent = '❚❚').catch(() => {}); }
+  }), { threshold: 0.5 });
+  tio.observe(tlVideo);
+}
+
+/* ================= before/after viewer ================= */
+const PAIRS = [
+  {b:'%%img:pair0_before%%', a:'%%img:pair0_after%%'},
+  {b:'%%img:pair5_before%%', a:'%%img:pair5_after%%'},
+  {b:'%%img:pair4_before%%', a:'%%img:pair4_after%%'},
+  {b:'%%img:pair6_before%%', a:'%%img:pair6_after%%'},
+  {b:'%%img:pair3_before%%', a:'%%img:pair3_after%%'},
+  {b:'%%img:pair7_before%%', a:'%%img:pair7_after%%'}
+];
+const baBox = document.getElementById('baBox');
+const baAfterWrap = document.getElementById('baAfterWrap');
+const baDiv = document.getElementById('baDiv');
+const baHandle = document.getElementById('baHandle');
+let baPos = 50, playing = false;
+function baSet(p){
+  baPos = Math.max(0, Math.min(100, p));
+  baAfterWrap.style.clipPath = `inset(0 0 0 ${baPos}%)`;
+  baDiv.style.left = baPos + '%';
+  baHandle.style.left = baPos + '%';
+  baBox.setAttribute('aria-valuenow', Math.round(baPos));
+}
+baSet(50);
+function baFromEvent(e){
+  const r = baBox.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  baSet(100 * x / r.width);
+}
+let dragging = false;
+baBox.addEventListener('pointerdown', e => { dragging = true; playing = false; baBox.setPointerCapture(e.pointerId); baFromEvent(e); });
+baBox.addEventListener('pointermove', e => { if (dragging) baFromEvent(e); });
+baBox.addEventListener('pointerup', () => dragging = false);
+baBox.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft'){ baSet(baPos - 4); e.preventDefault(); }
+  if (e.key === 'ArrowRight'){ baSet(baPos + 4); e.preventDefault(); }
+});
+document.getElementById('baPlay').addEventListener('click', () => {
+  if (reduceMotion){ baSet(baPos < 50 ? 100 : 0); return; }
+  playing = true;
+  let dir = 1, p = 0;
+  function step(){
+    if (!playing) return;
+    p += dir * 0.9;
+    if (p >= 100){ p = 100; dir = -1; }
+    if (p <= 0 && dir === -1){ playing = false; baSet(50); return; }
+    baSet(p);
+    requestAnimationFrame(step);
+  }
+  baSet(0); requestAnimationFrame(step);
+});
+const thumbs = document.getElementById('baThumbs');
+PAIRS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('role','tab');
+  b.setAttribute('aria-label', 'Sample pair ' + (i+1));
+  if (i === 0) b.classList.add('active');
+  const im = document.createElement('img');
+  im.src = 'data:image/jpeg;base64,' + p.a;
+  im.alt = '';
+  b.appendChild(im);
+  b.addEventListener('click', () => {
+    document.getElementById('baBefore').src = 'data:image/jpeg;base64,' + p.b;
+    document.getElementById('baAfter').src = 'data:image/jpeg;base64,' + p.a;
+    thumbs.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    baSet(50);
+  });
+  thumbs.appendChild(b);
+});
+
+/* ================= loss demos ================= */
+// deterministic pseudo-random for stable layouts
+function mulberry(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// Patch decorrelation: grid of patches diversifying + similarity matrix -> identity
+const pdP = document.getElementById('pdPatches').getContext('2d');
+const pdM = document.getElementById('pdMatrix').getContext('2d');
+const PN = 6;
+const pdRand = mulberry(7);
+const pdTargets = Array.from({length: PN*PN}, () => ({ h: pdRand()*360, l: 30 + pdRand()*40, s: 45 + pdRand()*30 }));
+function drawPD(t){ // t in [0,1]
+  const cell = 300 / PN;
+  for (let i = 0; i < PN*PN; i++){
+    const gx = (i % PN) * cell, gy = Math.floor(i / PN) * cell;
+    const tg = pdTargets[i];
+    const h = 40 + (tg.h - 40) * t, s = 8 + (tg.s - 8) * t, l = 52 + (tg.l - 52) * t;
+    pdP.fillStyle = `hsl(${h}, ${s}%, ${l}%)`;
+    pdP.fillRect(gx, gy, cell - 2, cell - 2);
+  }
+  // similarity matrix: high everywhere -> identity
+  const n = 12, mc = 300 / n;
+  const mRand = mulberry(3);
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++){
+    const target = r === c ? 1 : 0.04 * mRand();
+    const start = r === c ? 1 : 0.75 + 0.2 * mRand();
+    const v = start + (target - start) * t;
+    pdM.fillStyle = `hsla(322, 62%, 44%, ${v})`;
+    pdM.fillStyle = v > 0.02 ? `rgba(176,45,142,${v})` : tok('--bg3');
+    pdM.clearRect(c*mc, r*mc, mc, mc);
+    pdM.fillRect(c*mc, r*mc, mc - 1.5, mc - 1.5);
+  }
+}
+document.getElementById('pdSlider').addEventListener('input', e => drawPD(e.target.value / 100));
+drawPD(0);
+
+// Image decorrelation: clumped dots spread out + batch matrix -> identity
+const idC = document.getElementById('idClump').getContext('2d');
+const idM = document.getElementById('idMatrix').getContext('2d');
+const BN = 14;
+const idRand = mulberry(11);
+const idPts = Array.from({length: BN}, () => {
+  const ang = idRand() * Math.PI * 2;
+  const rad = 105 + idRand() * 28;
+  return { cx: 150 + (idRand()-0.5)*36, cy: 150 + (idRand()-0.5)*36,
+           tx: 150 + Math.cos(ang)*rad*0.85, ty: 150 + Math.sin(ang)*rad*0.85,
+           col: ['#2E6ACF','#C77F1F','#B02D8E','#1F8A5B','#7C4FB8','#C2452F','#2A9D8F'][Math.floor(idRand()*7)] };
+});
+function drawID(t){
+  idC.clearRect(0,0,300,300);
+  idC.strokeStyle = tok('--line'); idC.lineWidth = 1;
+  idC.strokeRect(0.5,0.5,299,299);
+  for (const p of idPts){
+    const x = p.cx + (p.tx - p.cx)*t, y = p.cy + (p.ty - p.cy)*t;
+    idC.beginPath(); idC.arc(x, y, 9, 0, Math.PI*2);
+    idC.fillStyle = p.col; idC.fill();
+    idC.lineWidth = 2; idC.strokeStyle = tok('--bg2'); idC.stroke();
+  }
+  const mc = 300 / BN, mRand = mulberry(5);
+  for (let r = 0; r < BN; r++) for (let c = 0; c < BN; c++){
+    const target = r === c ? 1 : 0.04 * mRand();
+    const start = r === c ? 1 : 0.7 + 0.25 * mRand();
+    const v = start + (target - start) * t;
+    idM.clearRect(c*mc, r*mc, mc, mc);
+    idM.fillStyle = `rgba(176,45,142,${v})`;
+    idM.fillRect(c*mc, r*mc, mc - 1.5, mc - 1.5);
+  }
+}
+document.getElementById('idSlider').addEventListener('input', e => drawID(e.target.value / 100));
+drawID(0);
+
+// gently auto-advance the demos when scrolled into view (once)
+if (!reduceMotion){
+  const auto = [['pdSlider', drawPD], ['idSlider', drawID]];
+  auto.forEach(([id, fn]) => {
+    const el = document.getElementById(id);
+    const io = new IntersectionObserver(es => {
+      es.forEach(en => { if (en.isIntersecting){
+        io.disconnect();
+        let v = 0;
+        const tick = () => { v += 1.2; if (v > 100) v = 100; el.value = v; fn(v/100); if (v < 100) requestAnimationFrame(tick); };
+        setTimeout(() => requestAnimationFrame(tick), 350);
+      }});
+    }, {threshold: 0.5});
+    io.observe(el.closest('.loss-card'));
+  });
+}
+
+/* ================= ablation toggle ================= */
+const ABL = {
+  '00': { img: '%%img:abl_dl%%',  name: 'Dead Leaves — no optimization (baseline)', v: [66.6, 65.1, 29.1, 0.655] },
+  '01': { img: '%%img:abl_id%%',  name: 'Only image decorrelation LᵢD', v: [73.4, 68.2, 32.4, 0.663] },
+  '10': { img: '%%img:abl_pd%%',  name: 'Only patch decorrelation LᴘD', v: [75.4, 69.1, 33.4, 0.595] },
+  '11': { img: '%%img:abl_both%%', name: 'Both — this is IDeaL', v: [77.0, 69.9, 34.5, 0.592] }
+};
+const ABL_NAMES = { '00':'<b>Dead Leaves</b> — no optimization (baseline)', '01':'Only <b>image decorrelation</b> — distinct samples, but internally flat', '10':'Only <b>patch decorrelation</b> — the bigger contributor', '11':'<b>Both losses — this is IDeaL.</b>' };
+const ckPD = document.getElementById('ckPD'), ckID = document.getElementById('ckID');
+function ablUpdate(){
+  const key = (ckPD.checked ? '1' : '0') + (ckID.checked ? '1' : '0');
+  const cfg = ABL[key], base = ABL['00'].v;
+  document.getElementById('togPD').classList.toggle('on', ckPD.checked);
+  document.getElementById('togID').classList.toggle('on', ckID.checked);
+  const img = document.getElementById('ablImg');
+  img.style.opacity = 0;
+  setTimeout(() => { img.src = 'data:image/jpeg;base64,' + cfg.img; img.style.opacity = 1; }, 130);
+  document.getElementById('ablName').innerHTML = ABL_NAMES[key];
+  const ids = [['sIN','dIN',1,1],['sTR','dTR',1,1],['sSG','dSG',1,1],['sDP','dDP',3,-1]];
+  ids.forEach(([sv, sd, dec, sign], i) => {
+    document.getElementById(sv).textContent = cfg.v[i].toFixed(dec === 3 ? 3 : 1);
+    const delta = (cfg.v[i] - base[i]) * 1;
+    const good = sign * delta > 0;
+    const el = document.getElementById(sd);
+    if (key === '00'){ el.innerHTML = '&nbsp;'; }
+    else { el.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(dec === 3 ? 3 : 1) + ' vs baseline'; el.className = 'd' + (good ? ' up' : ''); }
+  });
+}
+ckPD.addEventListener('change', ablUpdate);
+ckID.addEventListener('change', ablUpdate);
+ablUpdate();
+
+/* ================= results charts ================= */
+const DATA = {
+  '1K':  { gauss:[21.1,29.4,7.2,0.965], dl:[64.7,63.9,29.0,0.638], ideal:[74.1,68.6,33.9,0.594], inet:[72.6,65.3,34.2,0.566] },
+  '10K': { gauss:[21.6,30.4,7.6,0.940], dl:[66.6,65.1,29.1,0.655], ideal:[77.0,69.9,34.5,0.592], inet:[77.0,66.5,37.4,0.545] },
+  '100K':{ gauss:[22.7,31.3,8.2,0.915], dl:[67.1,65.6,29.0,0.639], ideal:[78.0,70.3,34.5,0.573], inet:[81.7,71.6,37.8,0.542] },
+  '1M':  { gauss:[22.6,30.9,8.3,0.924], dl:[66.9,65.5,29.1,0.632], ideal:[78.2,70.6,34.5,0.573], inet:[83.2,73.1,39.0,0.531] }
+};
+const MIN_TEACHER = [78.4, 68.3, 30.4, 0.616];
+const TASKS = [
+  { name: 'ImageNet classification', unit: 'Top-1 accuracy — higher is better', max: 90, dec: 1 },
+  { name: 'Transfer learning', unit: 'mean Top-1 over 15 datasets — higher is better', max: 80, dec: 1 },
+  { name: 'Semantic segmentation', unit: 'ADE20K mIoU — higher is better', max: 45, dec: 1 },
+  { name: 'Depth estimation', unit: 'NYUd RMSE — lower is better', max: 1.0, dec: 3 }
+];
+const SERIES = [
+  { key:'gauss', label:'Gaussian noise', tok:'--c-gauss' },
+  { key:'dl', label:'Dead Leaves', tok:'--c-dl' },
+  { key:'ideal', label:'IDeaL (ours)', tok:'--c-ideal' },
+  { key:'inet', label:'ImageNet (oracle)', tok:'--c-in' }
+];
+let curSize = '1M';
+const chartsEl = document.getElementById('charts');
+const tip = document.getElementById('tip');
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(n, attrs){ const e = document.createElementNS(SVGNS, n); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+function buildCharts(){
+  chartsEl.innerHTML = '';
+  const W = 460, H = 230, padL = 8, padR = 8, padT = 18, padB = 24;
+  TASKS.forEach((task, ti) => {
+    const card = document.createElement('div');
+    card.className = 'chart-card reveal in';
+    card.innerHTML = `<h3>${task.name}</h3><p class="unit">${task.unit}</p>`;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': task.name + ' results' });
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const bw = 54, gap = 2, groupW = plotW / 4;
+    // baseline
+    svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: H - padB + 0.5, y2: H - padB + 0.5, stroke: 'var(--line)', 'stroke-width': 1 }));
+    SERIES.forEach((s, si) => {
+      const v = DATA[curSize][s.key][ti];
+      const frac = Math.min(1, v / task.max);
+      const bh = Math.max(3, frac * plotH);
+      const x = padL + groupW * si + (groupW - bw) / 2;
+      const y = H - padB - bh;
+      const r = el('path', { d: `M${x},${H-padB} L${x},${y+4} Q${x},${y} ${x+4},${y} L${x+bw-4},${y} Q${x+bw},${y} ${x+bw},${y+4} L${x+bw},${H-padB} Z`,
+        fill: `var(${s.tok})` });
+      r.style.cursor = 'default';
+      r.addEventListener('mousemove', e => {
+        tip.style.opacity = 1;
+        tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY - 10) + 'px';
+        tip.textContent = `${s.label} · ${curSize}: ${v.toFixed(task.dec)}`;
+      });
+      r.addEventListener('mouseleave', () => tip.style.opacity = 0);
+      svg.appendChild(r);
+      const t = el('text', { x: x + bw/2, y: y - 6, 'text-anchor': 'middle', class: 'bar-val' });
+      t.textContent = v.toFixed(task.dec);
+      svg.appendChild(t);
+      const xl = el('text', { x: x + bw/2, y: H - 7, 'text-anchor': 'middle', class: 'axis-lbl' });
+      xl.textContent = ['Gaussian','Dead Lv.','IDeaL','ImageNet'][si];
+      svg.appendChild(xl);
+    });
+    // min-teacher reference line
+    const refY = H - padB - Math.min(1, MIN_TEACHER[ti] / task.max) * plotH;
+    svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: refY, y2: refY, stroke: 'var(--ink3)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }));
+    const rt = el('text', { x: W - padR, y: refY - 5, 'text-anchor': 'end', class: 'axis-lbl' });
+    rt.textContent = 'weakest teacher ' + MIN_TEACHER[ti].toFixed(task.dec);
+    svg.appendChild(rt);
+    card.appendChild(svg);
+    chartsEl.appendChild(card);
+  });
+}
+buildCharts();
+document.querySelectorAll('.size-picker button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.size-picker button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    curSize = b.dataset.size;
+    buildCharts();
+  });
+});
+
+/* ================= bibtex copy ================= */
+document.getElementById('copyBib').addEventListener('click', function(){
+  navigator.clipboard.writeText(document.getElementById('bibText').textContent).then(() => {
+    this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy', 1600);
+  });
+});
+
+/* ================= interactive method figure ================= */
+const mfig = document.querySelector('.mfig');
+const figCap = document.getElementById('figCap');
+const figCapDefault = figCap.innerHTML;
+const T_NOTES = [
+  'With <b>DINO</b> highlighted: its attention features define L₁ᴾᴰ + L₁ᴵᴰ — one voice among four shaping the same pixels.',
+  'With <b>iBOT</b> highlighted: the strongest teacher on dense tasks; samples optimized with it transfer that strength to the student.',
+  'With <b>DeiT-3</b> highlighted: a supervised teacher — no labels are needed, only its attention features.',
+  'With <b>dBOT-ft</b> highlighted: fine-tuned for classification; its losses pull the pixels toward what it finds informative.'
+];
+function figFocus(t){
+  mfig.classList.add('has-focus');
+  mfig.querySelectorAll('[data-t]').forEach(e => e.classList.toggle('lit', e.dataset.t === String(t)));
+  figCap.innerHTML = T_NOTES[t];
+}
+function figBlur(){
+  mfig.classList.remove('has-focus');
+  mfig.querySelectorAll('[data-t]').forEach(e => e.classList.remove('lit'));
+  figCap.innerHTML = figCapDefault;
+}
+mfig.querySelectorAll('.t-g').forEach(g => {
+  const t = +g.dataset.t;
+  g.addEventListener('mouseenter', () => figFocus(t));
+  g.addEventListener('mouseleave', figBlur);
+  g.addEventListener('focus', () => figFocus(t));
+  g.addEventListener('blur', figBlur);
+});
+
+const figAfter = document.getElementById('figAfter');
+const figSteps = document.getElementById('figSteps');
+const figRun = document.getElementById('figRun');
+const figGrad = mfig.querySelector('.f-grad');
+let figRunning = false;
+figRun.addEventListener('click', () => {
+  if (figRunning) return;
+  if (reduceMotion){ // simple toggle for reduced motion
+    const on = figAfter.style.opacity !== '0';
+    figAfter.style.opacity = on ? '0' : '1';
+    figRun.textContent = on ? '▶ Run the optimization' : '↺ Reset';
+    figSteps.textContent = on ? 'iteration 0' : '×1,000s of steps';
+    return;
+  }
+  figRunning = true;
+  figBlur();
+  figRun.disabled = true;
+  figRun.textContent = 'optimizing…';
+  figGrad.classList.add('fast');
+  figAfter.style.transition = 'none';
+  const DUR = 3800, MAXI = 1000;
+  const t0 = performance.now();
+  function step(now){
+    const p = Math.min(1, (now - t0) / DUR);
+    const ease = 1 - Math.pow(1 - p, 2.2);
+    figAfter.style.opacity = ease;
+    figSteps.textContent = 'iteration ' + Math.round(ease * MAXI);
+    if (p < 1){ requestAnimationFrame(step); }
+    else {
+      figGrad.classList.remove('fast');
+      figSteps.textContent = '×1,000s of steps';
+      figRun.disabled = false;
+      figRun.textContent = '↺ Run again';
+      figAfter.style.transition = '';
+      figRunning = false;
+    }
+  }
+  figAfter.style.opacity = 0;
+  requestAnimationFrame(step);
+});
+
+/* ================= scroll to top ================= */
+const stBtn = document.getElementById('scrollTop');
+addEventListener('scroll', () => stBtn.classList.toggle('show', scrollY > 500), { passive: true });
+stBtn.addEventListener('click', () => scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
+
+/* ================= reveal on scroll ================= */
+const ro = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target); } }), { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(x => ro.observe(x));
+
+/* redraw canvases on theme flips (token colors) */
+new MutationObserver(() => { drawPD(document.getElementById('pdSlider').value/100); drawID(document.getElementById('idSlider').value/100); buildCharts(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
